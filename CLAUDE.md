@@ -24,6 +24,8 @@ Preferência do dono: **toda nova implementação deve ser versionada e publicad
 
 ## Convenções
 
-- Cards de produto usam imagem em **4:5 (`aspect-[4/5]`) com `object-cover`**: a foto preenche o card, sem faixas laterais.
-- O card respeita o **ponto central** salvo em `producto.capa` (via `posicionCapa`, só `objectPosition`) — o dono ajusta o enquadramento por produto no admin ("portada": arrastar para centrar).
-- O editor de portada do admin tem prévia em **4:5 sem zoom**, idêntica ao card da loja (`estiloCapa` foi removido; nunca reintroduzir zoom/escala em cards).
+- Cards de produto usam imagem em **4:5 (`aspect-[4/5]`) com `object-cover`**.
+- O enquadramento por produto fica em `producto.capa` (jsonb): `{ indice, x, y, zoom, v: 2 }`. O card aplica via `estiloCapa` (`utils/imagen.js`): `objectPosition` no ponto focal + `scale(zoom)` com `transformOrigin` no mesmo ponto — o ponto escolhido fica fixo ao dar zoom.
+- **Zoom é opcional e controlado pelo dono** (pedido em 2026-07: dar/tirar zoom por produto, 0.5×–2.5×, slider + pinça no admin). Com zoom < 1 a sobra do card é preenchida com a própria foto desfocada — nunca faixas cruas.
+- Capas antigas **sem `v: 2` e com `zoom ≠ 1`** vêm do editor antigo (matemática diferente) e são ignoradas: renderizam centralizadas e sem zoom (`normalizarCapa`). Não "migrar" esses valores.
+- O editor de portada do admin tem prévia **idêntica ao card da loja** (mesmo `estiloCapa`), e o botão **"Aplicar a toda la categoría"** copia zoom/x/y para todos os produtos com fotos da categoria (cada um mantém seu próprio `indice`), via `aplicarCapaACategoria` do `useProductos`.

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { useCarrito } from '../../store/useCarrito'
 import { useFavoritos } from '../../store/useFavoritos'
 import { formatearPrecio } from '../../utils/formatear'
-import { imgSrc, fotoCapa, posicionCapa } from '../../utils/imagen'
+import { imgSrc, fotoCapa, estiloCapa, zoomCapa } from '../../utils/imagen'
 
 export function TarjetaProducto({ producto, onAgregarAlCarrito }) {
   const agregarAlCarrito = useCarrito(s => s.agregarAlCarrito)
@@ -14,7 +14,8 @@ export function TarjetaProducto({ producto, onAgregarAlCarrito }) {
   const bajoStock = !sinStock && producto.stock <= producto.stockMinimo
   const [imgCargada, setImgCargada] = useState(false)
   const fotoPortada = fotoCapa(producto)
-  const posicionPortada = posicionCapa(producto.capa)
+  const estiloPortada = estiloCapa(producto.capa)
+  const zoomPortada = zoomCapa(producto.capa)
 
   const manejarAgregar = (e) => {
     e.preventDefault()
@@ -42,15 +43,28 @@ export function TarjetaProducto({ producto, onAgregarAlCarrito }) {
           )}
 
           {fotoPortada ? (
-            <img
-              src={imgSrc(fotoPortada, 400, 80)}
-              alt={producto.nombre}
-              style={posicionPortada ? { objectPosition: posicionPortada } : undefined}
-              className={`w-full h-full object-cover transition-opacity duration-500 ${imgCargada ? 'opacity-100' : 'opacity-0'}`}
-              loading="lazy"
-              decoding="async"
-              onLoad={() => setImgCargada(true)}
-            />
+            <>
+              {/* Con zoom < 1 la foto no llena el card: rellena el resto con la misma foto desenfocada */}
+              {zoomPortada < 1 && (
+                <img
+                  src={imgSrc(fotoPortada, 100, 40)}
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-70"
+                  loading="lazy"
+                  decoding="async"
+                />
+              )}
+              <img
+                src={imgSrc(fotoPortada, zoomPortada > 1 ? 800 : 400, 80)}
+                alt={producto.nombre}
+                style={estiloPortada}
+                className={`relative w-full h-full object-cover transition-opacity duration-500 ${imgCargada ? 'opacity-100' : 'opacity-0'}`}
+                loading="lazy"
+                decoding="async"
+                onLoad={() => setImgCargada(true)}
+              />
+            </>
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-marca-beige">
               <ShoppingBag size={32} className="text-marca-beige-borde" />

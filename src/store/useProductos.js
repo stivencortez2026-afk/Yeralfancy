@@ -106,6 +106,44 @@ export const useProductos = create(
           })
       },
 
+      // Aplica el mismo encuadre de portada (zoom + posición) a todos los
+      // productos con fotos de una categoría; cada uno conserva su propia
+      // foto de portada (capa.indice).
+      aplicarCapaACategoria: async (categoriaId, ajuste) => {
+        const ahora = new Date().toISOString()
+        const actualizados = get().productos
+          .filter(p => p.categoriaId === categoriaId && (p.fotos?.length || 0) > 0)
+          .map(p => ({
+            ...p,
+            capa: {
+              indice: Number.isInteger(p.capa?.indice) ? p.capa.indice : 0,
+              zoom: ajuste.zoom ?? 1,
+              x: ajuste.x ?? 50,
+              y: ajuste.y ?? 50,
+              v: 2,
+            },
+            actualizadoEn: ahora,
+          }))
+        if (actualizados.length === 0) return 0
+
+        const resultados = await Promise.all(actualizados.map(p =>
+          supabase.from('productos')
+            .update({ capa: p.capa, updated_at: ahora })
+            .eq('id', p.id)
+        ))
+        const exitosos = new Set(actualizados.filter((_, i) => !resultados[i].error).map(p => p.id))
+        if (exitosos.size > 0) {
+          set(s => ({
+            productos: s.productos.map(p =>
+              exitosos.has(p.id) ? actualizados.find(a => a.id === p.id) : p
+            ),
+          }))
+        }
+        const conError = resultados.find(r => r.error)
+        if (conError) throw new Error(`Se aplicó a ${exitosos.size} de ${actualizados.length} productos. Error: ${conError.error.message}`)
+        return exitosos.size
+      },
+
       actualizarStock: async (id, cantidad) => {
         const nuevoStock = Math.max(0, cantidad)
         const { error } = await supabase.from('productos')
